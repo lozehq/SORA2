@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""
+Sora Video Generation Web Application
+Flask backend server
+"""
+
+from flask import Flask, render_template, request, Response, jsonify
+import requests
+import json
+
+app = Flask(__name__)
+
+# API Configuration
+API_KEY = "sk-wvTvyj2GXEzJkrOn73C7504a86764c279702A65237085358"
+BASE_URL = "https://api.dzz.ai"
+API_ENDPOINT = f"{BASE_URL}/v1/chat/completions"
+
+
+@app.route('/')
+def index():
+    """Render the main page"""
+    return render_template('index.html')
+
+
+@app.route('/api/generate', methods=['POST'])
+def generate_video():
+    """Proxy endpoint for video generation"""
+    try:
+        data = request.get_json()
+        prompt = data.get('prompt', '')
+        resolution = data.get('resolution', '1080p')
+        mode = data.get('mode', 'text')
+        image_base64 = data.get('image', None)
+        
+        if not prompt and mode == 'text':
+            return jsonify({'error': 'Prompt is required'}), 400
+        
+        if mode == 'image' and not image_base64:
+            return jsonify({'error': 'Image is required for image-to-video mode'}), 400
+        
+        headers = {
+            'Authorization': f'Bearer {API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        
+        # Build message content
+        if mode == 'image' and image_base64:
+            # Image-to-video mode
+            content = [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_base64
+                    }
+                }
+            ]
+            if prompt:
+                content.insert(0, {
+                    "type": "text",
+                    "text": prompt
+                })
+        else:
+            # Text-to-video mode
+            content = prompt
+        
+        payload = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": content
+                }
+            ],
+            "model": "sora_video2",
+            "stream": True
+        }
+        
+        def generate():
+            """Generator function for streaming response"""
+            try:
+                response = requests.post(
+                    API_ENDPOINT,
+                    headers=headers,
+                    json=payload,
+                    stream=True,
+                    timeout=300
+                )
+                
+                response.raise_for_status()
+                
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        if decoded_line.startswith('data: '):
+                            data = decoded_line[6:]
+                            yield f"data: {data}\n\n"
+                            
+            except requests.exceptions.RequestException as e:
+                error_data = {
+                    'error': str(e),
+                    'status': getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'ok', 'model': 'sora_video2'})
+
+
+if __name__ == '__main__':
+    print("=" * 60)
+    print("Sora Video Generation Web Application")
+    print("=" * 60)
+    print("Starting server at http://localhost:5000")
+    print("Press Ctrl+C to stop")
+    print("=" * 60)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
