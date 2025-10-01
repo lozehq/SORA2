@@ -7,17 +7,60 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="logo">
-                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M23 7l-7 5 7 5V7z"></path>
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9z"></path>
                 </svg>
-                <h1>Sora 视频生成器</h1>
             </div>
-            <div class="subtitle">使用 AI 创建令人惊叹的视频</div>
-        </header>
+            <div class="brand-text">
+                <span class="brand-title">Sora Studio</span>
+                <span class="brand-subtitle">Creative Video Co-pilot</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <div class="status-pill" id="apiStatus">
+                <span class="status-dot"></span>
+                <span>API 在线</span>
+            </div>
+            <button class="nav-btn" id="openDocsBtn" type="button">使用指南</button>
+            <button class="nav-avatar" type="button">
+                <img src="https://avatars.githubusercontent.com/u/143659633?s=200" alt="avatar">
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="dashboard-overview">
+            <div class="stat-card primary">
+                <div class="stat-meta">
+                    <span class="stat-label">总生成次数</span>
+                    <button class="stat-action" type="button" id="viewHistoryBtn">查看历史</button>
+                </div>
+                <div class="stat-value" id="totalGenerations">0</div>
+                <div class="stat-trend positive" id="todayCount">今日 +0</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-meta">
+                    <span class="stat-label">平均生成时长</span>
+                    <span class="stat-hint">最近 5 次</span>
+                </div>
+                <div class="stat-value" id="avgDuration">00:00</div>
+                <div class="stat-trend neutral" id="lastDuration">上次 00:00</div>
+            </div>
+            <div class="stat-card glass">
+                <div class="stat-meta">
+                    <span class="stat-label">最近生成</span>
+                    <span class="stat-hint" id="lastGeneratedAt">暂无</span>
+                </div>
+                <div class="stat-value" id="lastMode">-</div>
+                <div class="stat-chips" id="lastParams">
+                    <span class="chip">-</span>
+                    <span class="chip">-</span>
+                </div>
+            </div>
+        </section>
 
         <main class="main-content">
             <!-- 历史记录侧边栏 -->
@@ -56,127 +99,159 @@
 
             <div class="input-section">
                 <!-- 模式切换 -->
-                <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="text">
-                        <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        <span>文生视频</span>
-                    </button>
-                    <button class="mode-btn" data-mode="image">
-                        <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <span>图生视频</span>
-                    </button>
+                <div class="panel mode-panel">
+                    <div class="panel-header">
+                        <h3>生成模式</h3>
+                        <p>选择合适的生成方式，获取最佳效果</p>
+                    </div>
+                    <div class="mode-selector" role="tablist">
+                        <button class="mode-btn active" data-mode="text" role="tab" aria-selected="true">
+                            <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <span>文生视频</span>
+                        </button>
+                        <button class="mode-btn" data-mode="image" role="tab" aria-selected="false">
+                            <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span>图生视频</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 视频设置 -->
-                <div class="video-settings">
-                    <div class="input-group">
-                        <label for="resolution">视频分辨率</label>
-                        <select id="resolution" class="resolution-select">
-                            <option value="720p">720p (1280x720)</option>
-                            <option value="1080p" selected>1080p (1920x1080) - 推荐</option>
-                            <option value="2k">2K (2560x1440)</option>
-                            <option value="4k">4K (3840x2160)</option>
-                        </select>
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <h3>输出参数</h3>
+                        <p>设置期望的画质与画面比例</p>
                     </div>
+                    <div class="video-settings">
+                        <div class="input-group">
+                            <label for="resolution">视频分辨率</label>
+                            <select id="resolution" class="resolution-select">
+                                <option value="720p">720p (1280x720)</option>
+                                <option value="1080p" selected>1080p (1920x1080) - 推荐</option>
+                                <option value="2k">2K (2560x1440)</option>
+                                <option value="4k">4K (3840x2160)</option>
+                            </select>
+                        </div>
 
-                    <div class="input-group">
-                        <label for="aspectRatio">画面比例</label>
-                        <div class="aspect-ratio-selector">
-                            <button class="aspect-btn active" data-ratio="16:9">
+                        <div class="input-group">
+                            <label for="aspectRatio">画面比例</label>
+                            <div class="aspect-ratio-selector">
+                        <button class="aspect-btn active" data-ratio="16:9" title="横屏 16:9">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <rect x="2" y="5" width="20" height="14" rx="2"></rect>
                                 </svg>
                                 <span>16:9</span>
-                                <span class="ratio-label">横屏</span>
                             </button>
-                            <button class="aspect-btn" data-ratio="9:16">
+                            <button class="aspect-btn" data-ratio="9:16" title="竖屏 9:16">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <rect x="7" y="2" width="10" height="20" rx="2"></rect>
                                 </svg>
                                 <span>9:16</span>
-                                <span class="ratio-label">竖屏</span>
                             </button>
-                            <button class="aspect-btn" data-ratio="1:1">
+                            <button class="aspect-btn" data-ratio="1:1" title="方形 1:1">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <rect x="4" y="4" width="16" height="16" rx="2"></rect>
                                 </svg>
                                 <span>1:1</span>
-                                <span class="ratio-label">方形</span>
                             </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 图片上传区域 -->
-                <div class="input-group image-upload-group" id="imageUploadGroup" style="display: none;">
-                    <label for="imageUpload">上传参考图片</label>
-                    <div class="image-upload-area" id="imageUploadArea">
-                        <input type="file" id="imageUpload" accept="image/*" hidden>
-                        <div class="upload-placeholder" id="uploadPlaceholder">
-                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            <p>点击上传图片或拖拽图片到这里</p>
-                            <span class="upload-hint">支持 JPG, PNG, GIF 格式</span>
-                        </div>
-                        <div class="image-preview" id="imagePreview" style="display: none;">
-                            <img id="previewImg" src="" alt="预览图片">
-                            <button class="remove-image-btn" id="removeImageBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                <div class="panel glass" id="imageUploadPanel" style="display: none;">
+                    <div class="panel-header">
+                        <h3>图像参考</h3>
+                        <p>上传参考图像，指导生成动效</p>
+                    </div>
+                    <div class="input-group image-upload-group" id="imageUploadGroup">
+                        <label for="imageUpload">上传参考图片</label>
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <input type="file" id="imageUpload" accept="image/*" hidden>
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
                                 </svg>
-                            </button>
+                                <p>点击上传图片或拖拽图片到这里</p>
+                                <span class="upload-hint">支持 JPG, PNG, GIF 格式</span>
+                            </div>
+                            <div class="image-preview" id="imagePreview" style="display: none;">
+                                <img id="previewImg" src="" alt="预览图片">
+                                <button class="remove-image-btn" id="removeImageBtn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 文本描述 -->
-                <div class="input-group">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <h3>创作指令</h3>
+                        <p id="promptHelper">详细描述你想要的镜头、风格与氛围</p>
+                    </div>
+                    <div class="input-group">
                     <label for="prompt">
                         <span id="promptLabel">视频描述</span>
                     </label>
                     <textarea 
                         id="prompt" 
                         placeholder="描述您想要生成的视频内容，例如：小猫在阳光下吃鱼"
-                        rows="4"
+                        rows="2"
                     ></textarea>
-                    <div class="char-count">
-                        <span id="charCount">0</span> 字符
+                        <div class="char-count">
+                            <span id="charCount">0</span> 字符
+                        </div>
                     </div>
                 </div>
 
                 <!-- 快速提示词 -->
-                <div class="quick-prompts" id="quickPrompts">
-                    <div class="quick-prompts-title">快速提示词</div>
-                    <div class="quick-prompts-grid">
-                        <button class="quick-prompt-btn" data-prompt="小猫吃鱼">🐱 小猫吃鱼</button>
-                        <button class="quick-prompt-btn" data-prompt="夕阳下的海滩">🌅 海滩日落</button>
-                        <button class="quick-prompt-btn" data-prompt="城市夜景延时摄影">🌃 城市夜景</button>
-                        <button class="quick-prompt-btn" data-prompt="森林中的小溪流水">🌲 森林溪流</button>
-                        <button class="quick-prompt-btn" data-prompt="雨天窗外的街景">🌧️ 雨天街景</button>
-                        <button class="quick-prompt-btn" data-prompt="咖啡店内部场景">☕ 咖啡店</button>
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <h3>灵感合集</h3>
+                        <p>点击即可填充模板，快速开始创作</p>
+                    </div>
+                    <div class="quick-prompts" id="quickPrompts">
+                        <div class="prompt-chip" data-prompt="小猫吃鱼">🐱 小猫吃鱼</div>
+                        <div class="prompt-chip" data-prompt="夕阳下的海滩">🌅 海滩日落</div>
+                        <div class="prompt-chip" data-prompt="城市夜景延时摄影">🌃 城市夜景</div>
+                        <div class="prompt-chip" data-prompt="森林中的小溪流水">🌲 森林溪流</div>
+                        <div class="prompt-chip" data-prompt="雨天窗外的街景">🌧️ 雨天街景</div>
+                        <div class="prompt-chip" data-prompt="咖啡店内部场景">☕ 咖啡店</div>
+                        <div class="prompt-chip" data-prompt="复古胶片风格婚礼影片">✨ 胶片婚礼</div>
+                        <div class="prompt-chip" data-prompt="漫威风格的城市大战">⚡ 漫威大战</div>
                     </div>
                 </div>
 
-                <button id="generateBtn" class="generate-btn">
-                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    <span class="btn-text">生成视频</span>
-                </button>
+                <div class="action-footer">
+                    <div class="tips">
+                        <span>提示</span>
+                        <p>系统会自动将关键描述加入 Sora 视频模型，支持中文与英文混合</p>
+                    </div>
+                    <button id="generateBtn" class="generate-btn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span class="btn-text">生成视频</span>
+                    </button>
+                </div>
             </div>
 
             <div class="output-section">
@@ -295,7 +370,15 @@
                     </div>
                 </div>
 
-                <div class="response-log" id="responseLog"></div>
+                <div class="response-log-wrapper collapsed" id="logWrapper">
+                    <button class="log-header" id="logToggleBtn" type="button">
+                        <span>响应日志</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="response-log" id="responseLog"></div>
+                </div>
             </div>
         </main>
 

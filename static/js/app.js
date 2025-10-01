@@ -1,4 +1,23 @@
 // Sora Video Generation Frontend
+class EnhancedSelect {
+    constructor(selector) {
+        this.select = document.querySelector(selector);
+        if (!this.select) {
+            throw new Error(`Select element ${selector} not found`);
+        }
+        this.select.classList.add('enhanced-select');
+    }
+
+    get value() {
+        return this.select.value;
+    }
+
+    setValue(value) {
+        this.select.value = value;
+        this.select.dispatchEvent(new Event('change'));
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
     const promptTextarea = document.getElementById('prompt');
@@ -7,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusIndicator = document.getElementById('statusIndicator');
     const outputContent = document.getElementById('outputContent');
     const responseLog = document.getElementById('responseLog');
-    const quickPromptBtns = document.querySelectorAll('.quick-prompt-btn');
-    const resolutionSelect = document.getElementById('resolution');
+    const quickPromptChips = document.querySelectorAll('.prompt-chip');
+    const resolutionSelect = new EnhancedSelect('#resolution');
     const aspectBtns = document.querySelectorAll('.aspect-btn');
     
     // History elements
@@ -20,9 +39,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mode switching elements
     const modeBtns = document.querySelectorAll('.mode-btn');
+    const imageUploadPanel = document.getElementById('imageUploadPanel');
     const imageUploadGroup = document.getElementById('imageUploadGroup');
     const promptLabel = document.getElementById('promptLabel');
-    const quickPrompts = document.getElementById('quickPrompts');
+    const promptHelper = document.getElementById('promptHelper');
     
     // Image upload elements
     const imageUploadArea = document.getElementById('imageUploadArea');
@@ -47,6 +67,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const progressMessage = document.getElementById('progressMessage');
     const elapsedTime = document.getElementById('elapsedTime');
     const estimatedTime = document.getElementById('estimatedTime');
+    
+    // Dashboard / Log elements
+    const logWrapper = document.getElementById('logWrapper');
+    const logToggleBtn = document.getElementById('logToggleBtn');
+    const apiStatus = document.getElementById('apiStatus');
+    const openDocsBtn = document.getElementById('openDocsBtn');
+    const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+    const totalGenerationsEl = document.getElementById('totalGenerations');
+    const todayCountEl = document.getElementById('todayCount');
+    const avgDurationEl = document.getElementById('avgDuration');
+    const lastDurationEl = document.getElementById('lastDuration');
+    const lastGeneratedAtEl = document.getElementById('lastGeneratedAt');
+    const lastModeEl = document.getElementById('lastMode');
+    const lastParamsEl = document.getElementById('lastParams');
 
     // State
     let isGenerating = false;
@@ -64,6 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
     promptTextarea.addEventListener('input', function() {
         const count = this.value.length;
         charCountSpan.textContent = count;
+        if (count > 0) {
+            quickPromptChips.forEach(chip => chip.classList.remove('active'));
+        }
     });
     
     // Aspect ratio selection
@@ -86,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
             generationHistory = [];
             saveHistory();
             renderHistory();
+            updateDashboard();
             showNotification('历史记录已清空', 'info');
         }
     });
@@ -98,27 +136,37 @@ document.addEventListener('DOMContentLoaded', function() {
             historySidebar.classList.remove('open');
         }
     });
+    
+    // Toggle log visibility
+    logToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        logWrapper.classList.toggle('collapsed');
+    });
 
     // Mode switching
     modeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const mode = this.getAttribute('data-mode');
             if (mode === currentMode) return;
-            
+
             // Update active state
             modeBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
+
             currentMode = mode;
-            
+
             // Toggle UI elements
             if (mode === 'image') {
-                imageUploadGroup.style.display = 'block';
+                imageUploadPanel.style.display = 'block';
+                imageUploadPanel.classList.add('active');
                 promptLabel.textContent = '视频描述（可选）';
-                promptTextarea.placeholder = '描述如何处理图片或视频的风格（可选）';
+                promptHelper.textContent = '可补充动画方向、镜头运动、画面节奏等信息';
+                promptTextarea.placeholder = '描述动画需求，例如：镜头环绕角色一圈并营造梦幻光影';
             } else {
-                imageUploadGroup.style.display = 'none';
+                imageUploadPanel.style.display = 'none';
+                imageUploadPanel.classList.remove('active');
                 promptLabel.textContent = '视频描述';
+                promptHelper.textContent = '详细描述你想要的镜头、风格与氛围';
                 promptTextarea.placeholder = '描述您想要生成的视频内容，例如：小猫在阳光下吃鱼';
                 // Clear image
                 clearImage();
@@ -195,13 +243,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Quick prompts
-    quickPromptBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
+    quickPromptChips.forEach(chip => {
+        chip.addEventListener('click', function() {
             const prompt = this.getAttribute('data-prompt');
+            quickPromptChips.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
             promptTextarea.value = prompt;
             promptTextarea.dispatchEvent(new Event('input'));
             promptTextarea.focus();
         });
+    });
+
+    viewHistoryBtn.addEventListener('click', () => {
+        historySidebar.classList.add('open');
+    });
+
+    openDocsBtn.addEventListener('click', () => {
+        window.open('使用说明.md', '_blank');
     });
 
     // Generate button
@@ -266,6 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showProgress();
         resetProgress();
         startProgressTimer();
+        const startTime = Date.now();
         
         // Create history item
         const historyItem = {
@@ -276,12 +335,14 @@ document.addEventListener('DOMContentLoaded', function() {
             mode: currentMode,
             timestamp: new Date().toISOString(),
             videoUrl: null,
-            status: 'generating'
+            status: 'generating',
+            duration: 0
         };
         currentHistoryId = historyItem.id;
         generationHistory.unshift(historyItem);
         saveHistory();
         renderHistory();
+        updateDashboard();
 
         // Build full prompt with resolution and aspect ratio
         let fullPrompt = prompt;
@@ -406,6 +467,13 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             isGenerating = false;
             updateButton(false);
+            const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const item = generationHistory.find(h => h.id === currentHistoryId);
+            if (item && durationSeconds > 0) {
+                item.duration = durationSeconds;
+                saveHistory();
+                updateDashboard();
+            }
         }
     }
 
@@ -589,6 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function renderHistory() {
+        updateDashboard();
         historyBadge.textContent = generationHistory.length || '';
         
         if (generationHistory.length === 0) {
@@ -656,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
         promptTextarea.value = item.prompt;
         promptTextarea.dispatchEvent(new Event('input'));
         
-        resolutionSelect.value = item.resolution;
+        resolutionSelect.setValue(item.resolution);
         
         aspectBtns.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-ratio') === item.aspectRatio);
@@ -679,8 +748,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (item) {
             item.videoUrl = url;
             item.status = 'completed';
+            if (!item.duration) {
+                item.duration = Math.floor((Date.now() - progressStartTime) / 1000);
+            }
+            item.completedAt = new Date().toISOString();
             saveHistory();
             renderHistory();
+            updateDashboard();
         }
     }
     
@@ -690,17 +764,64 @@ document.addEventListener('DOMContentLoaded', function() {
             item.status = status;
             saveHistory();
             renderHistory();
+            updateDashboard();
         }
+    }
+
+    function updateDashboard() {
+        const total = generationHistory.length;
+        totalGenerationsEl.textContent = total;
+
+        const today = new Date().toDateString();
+        const todayCount = generationHistory.filter(item => new Date(item.timestamp).toDateString() === today).length;
+        todayCountEl.textContent = `今日 +${todayCount}`;
+
+        const completed = generationHistory.filter(item => item.videoUrl);
+        if (completed.length > 0) {
+            const durations = completed.slice(0, 5).map(item => item.duration || 0).filter(Boolean);
+            if (durations.length > 0) {
+                const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+                avgDurationEl.textContent = formatDuration(avg);
+                const lastDuration = durations[0];
+                lastDurationEl.textContent = `上次 ${formatDuration(lastDuration)}`;
+            } else {
+                avgDurationEl.textContent = '00:00';
+                lastDurationEl.textContent = '上次 00:00';
+            }
+
+            const last = completed[0];
+            const time = new Date(last.timestamp).toLocaleString('zh-CN', { hour12: false });
+            lastGeneratedAtEl.textContent = time;
+            lastModeEl.textContent = last.mode === 'text' ? '文生视频' : '图生视频';
+            lastParamsEl.innerHTML = `
+                <span class="chip">${last.resolution}</span>
+                <span class="chip">${last.aspectRatio}</span>
+            `;
+        } else {
+            avgDurationEl.textContent = '00:00';
+            lastDurationEl.textContent = '上次 00:00';
+            lastGeneratedAtEl.textContent = '暂无';
+            lastModeEl.textContent = '-';
+            lastParamsEl.innerHTML = `<span class="chip">-</span>`;
+        }
+    }
+
+    function formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     
     // Progress functions
     function showProgress() {
         progressContainer.style.display = 'block';
+        progressContainer.classList.add('visible');
         outputContent.style.display = 'none';
     }
     
     function hideProgress() {
         setTimeout(() => {
+            progressContainer.classList.remove('visible');
             progressContainer.style.display = 'none';
             outputContent.style.display = 'block';
         }, 500);
@@ -813,7 +934,14 @@ document.addEventListener('DOMContentLoaded', function() {
         stopProgressTimer();
         updateProgressUI(100, '视频生成成功！');
         estimatedTime.textContent = '已完成';
-        
+
+        const item = generationHistory.find(h => h.id === currentHistoryId);
+        if (item) {
+            item.duration = Math.floor((Date.now() - progressStartTime) / 1000);
+            saveHistory();
+            updateDashboard();
+        }
+
         // Show completion animation
         setTimeout(() => {
             progressContainer.style.opacity = '0';
@@ -826,6 +954,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize
     updateStatus('ready', '就绪');
     loadHistory();
+    updateDashboard();
+    refreshApiStatus();
     console.log('Sora Video Generator initialized');
+
+    async function refreshApiStatus() {
+        try {
+            const res = await fetch('/api/health');
+            if (res.ok) {
+                apiStatus.classList.add('online');
+                apiStatus.classList.remove('offline');
+                return;
+            }
+        } catch (e) {
+            // ignore
+        }
+        apiStatus.classList.remove('online');
+        apiStatus.classList.add('offline');
+    }
 });
 
