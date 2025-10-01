@@ -29,8 +29,12 @@ def generate_video():
         data = request.get_json()
         prompt = data.get('prompt', '')
         resolution = data.get('resolution', '1080p')
+        aspect_ratio = data.get('aspectRatio', '16:9')
         mode = data.get('mode', 'text')
         image_base64 = data.get('image', None)
+        
+        # 打印调试信息
+        print(f"收到请求 - 分辨率: {resolution}, 比例: {aspect_ratio}, 模式: {mode}")
         
         if not prompt and mode == 'text':
             return jsonify({'error': 'Prompt is required'}), 400
@@ -77,6 +81,8 @@ def generate_video():
         def generate():
             """Generator function for streaming response"""
             try:
+                print(f"发送到 API 的 payload: {json.dumps(payload, ensure_ascii=False)[:200]}...")
+                
                 response = requests.post(
                     API_ENDPOINT,
                     headers=headers,
@@ -85,6 +91,7 @@ def generate_video():
                     timeout=300
                 )
                 
+                print(f"API 响应状态码: {response.status_code}")
                 response.raise_for_status()
                 
                 for line in response.iter_lines():
@@ -95,10 +102,17 @@ def generate_video():
                             yield f"data: {data}\n\n"
                             
             except requests.exceptions.RequestException as e:
+                print(f"API 请求错误: {str(e)}")
+                if hasattr(e, 'response') and e.response is not None:
+                    print(f"响应内容: {e.response.text[:500]}")
                 error_data = {
                     'error': str(e),
                     'status': getattr(e.response, 'status_code', 500) if hasattr(e, 'response') else 500
                 }
+                yield f"data: {json.dumps(error_data)}\n\n"
+            except Exception as e:
+                print(f"其他错误: {str(e)}")
+                error_data = {'error': str(e), 'status': 500}
                 yield f"data: {json.dumps(error_data)}\n\n"
         
         return Response(generate(), mimetype='text/event-stream')

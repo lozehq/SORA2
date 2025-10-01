@@ -355,12 +355,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const requestData = {
                 prompt: fullPrompt,
                 resolution: resolution,
+                aspectRatio: aspectRatio,
                 mode: currentMode
             };
 
             if (imageBase64) {
                 requestData.image = imageBase64;
             }
+            
+            // 添加日志查看实际发送的参数
+            console.log('发送参数:', {
+                resolution,
+                aspectRatio,
+                mode: currentMode,
+                promptPreview: fullPrompt.substring(0, 50) + '...'
+            });
 
             const response = await fetch('/api/generate', {
                 method: 'POST',

@@ -208,35 +208,30 @@
                         <p id="promptHelper">详细描述你想要的镜头、风格与氛围</p>
                     </div>
                     <div class="input-group">
-                    <label for="prompt">
-                        <span id="promptLabel">视频描述</span>
-                    </label>
-                    <textarea 
-                        id="prompt" 
-                        placeholder="描述您想要生成的视频内容，例如：小猫在阳光下吃鱼"
-                        rows="2"
-                    ></textarea>
+                        <label for="prompt">
+                            <span id="promptLabel">视频描述</span>
+                        </label>
+                        <textarea 
+                            id="prompt" 
+                            placeholder="描述您想要生成的视频内容，例如：小猫在阳光下吃鱼"
+                            rows="2"
+                        ></textarea>
                         <div class="char-count">
                             <span id="charCount">0</span> 字符
                         </div>
                     </div>
-                </div>
-
-                <!-- 快速提示词 -->
-                <div class="panel glass">
-                    <div class="panel-header">
-                        <h3>灵感合集</h3>
-                        <p>点击即可填充模板，快速开始创作</p>
-                    </div>
-                    <div class="quick-prompts" id="quickPrompts">
-                        <div class="prompt-chip" data-prompt="小猫吃鱼">🐱 小猫吃鱼</div>
-                        <div class="prompt-chip" data-prompt="夕阳下的海滩">🌅 海滩日落</div>
-                        <div class="prompt-chip" data-prompt="城市夜景延时摄影">🌃 城市夜景</div>
-                        <div class="prompt-chip" data-prompt="森林中的小溪流水">🌲 森林溪流</div>
-                        <div class="prompt-chip" data-prompt="雨天窗外的街景">🌧️ 雨天街景</div>
-                        <div class="prompt-chip" data-prompt="咖啡店内部场景">☕ 咖啡店</div>
-                        <div class="prompt-chip" data-prompt="复古胶片风格婚礼影片">✨ 胶片婚礼</div>
-                        <div class="prompt-chip" data-prompt="漫威风格的城市大战">⚡ 漫威大战</div>
+                    
+                    <!-- 快速提示词集成到创作指令面板 -->
+                    <div class="quick-prompts-section">
+                        <div class="quick-prompts-label">快速填充</div>
+                        <div class="quick-prompts" id="quickPrompts">
+                            <div class="prompt-chip" data-prompt="小猫吃鱼">🐱 小猫吃鱼</div>
+                            <div class="prompt-chip" data-prompt="夕阳下的海滩">🌅 海滩日落</div>
+                            <div class="prompt-chip" data-prompt="城市夜景延时摄影">🌃 城市夜景</div>
+                            <div class="prompt-chip" data-prompt="森林中的小溪流水">🌲 森林溪流</div>
+                            <div class="prompt-chip" data-prompt="雨天窗外的街景">🌧️ 雨天街景</div>
+                            <div class="prompt-chip" data-prompt="咖啡店内部场景">☕ 咖啡店</div>
+                        </div>
                     </div>
                 </div>
 
