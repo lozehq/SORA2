@@ -1,3 +1,1 @@
-# No Python dependencies needed for EdgeOne Pages deployment
-# This project uses Node.js Functions only
-
+requests>=2.31.0
