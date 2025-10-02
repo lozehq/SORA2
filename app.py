@@ -7,11 +7,13 @@ Flask backend server
 from flask import Flask, render_template, request, Response, jsonify
 import requests
 import json
+import os
 
 app = Flask(__name__)
 
 # API Configuration
-API_KEY = "sk-wvTvyj2GXEzJkrOn73C7504a86764c279702A65237085358"
+# Prefer environment variable for security in deployments
+API_KEY = os.getenv('SORA_API_KEY', "sk-wvTvyj2GXEzJkrOn73C7504a86764c279702A65237085358")
 BASE_URL = "https://api.dzz.ai"
 API_ENDPOINT = f"{BASE_URL}/v1/chat/completions"
 
@@ -115,7 +117,11 @@ def generate_video():
                 error_data = {'error': str(e), 'status': 500}
                 yield f"data: {json.dumps(error_data)}\n\n"
         
-        return Response(generate(), mimetype='text/event-stream')
+        resp = Response(generate(), mimetype='text/event-stream')
+        # Improve SSE compatibility behind proxies/CDNs
+        resp.headers['Cache-Control'] = 'no-cache'
+        resp.headers['X-Accel-Buffering'] = 'no'
+        return resp
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -125,6 +131,18 @@ def generate_video():
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'ok', 'model': 'sora_video2'})
+
+
+@app.errorhandler(404)
+def not_found(_e):
+    """Serve SPA index for non-API 404s to avoid platform 404 pages"""
+    try:
+        path = request.path or ''
+    except Exception:
+        path = ''
+    if path.startswith('/api/'):
+        return jsonify({'error': 'Not found'}), 404
+    return render_template('index.html'), 200
 
 
 if __name__ == '__main__':
