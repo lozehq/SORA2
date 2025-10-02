@@ -1,8 +1,8 @@
 {
   "build": {
-    "command": "",
+    "command": "echo 'No build needed'",
     "output": ".",
-    "installCommand": ""
+    "installCommand": "echo 'No install needed'"
   },
   "functions": {
     "api/*": {
