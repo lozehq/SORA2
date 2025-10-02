@@ -5,14 +5,11 @@ Flask backend server
 """
 
 from flask import Flask, render_template, request, Response, jsonify
-from flask_cors import CORS
 import requests
 import json
 import os
 
 app = Flask(__name__)
-# Enable CORS for frontends hosted on different origins (EdgeOne Pages + backend elsewhere)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 
 # API Configuration
 # Prefer environment variable for security in deployments
