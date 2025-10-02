@@ -1,23 +1,13 @@
 {
-  "functions": {
-    "api/*": {
-      "runtime": "nodejs22.x",
-      "handler": "index.js"
-    }
-  },
   "build": {
     "command": "",
-    "output": "."
+    "output": ".",
+    "installCommand": ""
   },
-  "routes": [
-    {
-      "src": "/api/health",
-      "dest": "/functions/api/health.js"
-    },
-    {
-      "src": "/api/generate",
-      "dest": "/functions/api/generate.js"
+  "functions": {
+    "api/*": {
+      "runtime": "nodejs22.x"
     }
-  ]
+  }
 }
 
