@@ -82,6 +82,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastModeEl = document.getElementById('lastMode');
     const lastParamsEl = document.getElementById('lastParams');
 
+    // API base configuration (supports URL param ?apiBase=..., or localStorage 'sora_api_base')
+    const API_BASE = (() => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const fromQuery = params.get('apiBase');
+            if (fromQuery) {
+                const cleaned = fromQuery.replace(/\/$/, '');
+                localStorage.setItem('sora_api_base', cleaned);
+                return cleaned;
+            }
+            const saved = localStorage.getItem('sora_api_base');
+            if (saved) return saved.replace(/\/$/, '');
+            // Local dev: same origin
+            if (['localhost', '127.0.0.1', '198.18.0.1'].includes(location.hostname)) {
+                return '';
+            }
+            // Default to same-origin for single-host deployments
+            return '';
+        } catch (e) {
+            return '';
+        }
+    })();
+
     // State
     let isGenerating = false;
     let currentMode = 'text'; // 'text' or 'image'
@@ -371,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 promptPreview: fullPrompt.substring(0, 50) + '...'
             });
 
-            const response = await fetch('/api/generate', {
+            const response = await fetch(`${API_BASE}/api/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -969,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function refreshApiStatus() {
         try {
-            const res = await fetch('/api/health');
+            const res = await fetch(`${API_BASE}/api/health`);
             if (res.ok) {
                 apiStatus.classList.add('online');
                 apiStatus.classList.remove('offline');
