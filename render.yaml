@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: sora2-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    envVars:
+      - key: SORA_API_KEY
+        sync: false # 在 Render 控制台填写你的密钥
+
+
