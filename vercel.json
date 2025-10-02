@@ -1,23 +1,13 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/*.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "source": "/api/health",
+      "destination": "/api/health.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/generate",
+      "destination": "/api/generate.py"
     }
-  ],
-  "env": {
-    "SORA_API_KEY": "@sora_api_key"
-  }
+  ]
 }
 
