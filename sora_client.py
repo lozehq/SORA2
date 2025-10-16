@@ -7,7 +7,12 @@ A simple client to interact with the Sora video generation API
 import requests
 import json
 import sys
+import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class SoraClient:
@@ -108,9 +113,14 @@ class SoraClient:
 
 def main():
     """Main entry point"""
-    # Configuration
-    API_KEY = "sk-wvTvyj2GXEzJkrOn73C7504a86764c279702A65237085358"
-    BASE_URL = "https://api.dzz.ai"
+    # Configuration - read from environment
+    API_KEY = os.getenv('SORA_API_KEY')
+    BASE_URL = os.getenv('SORA_BASE_URL', 'https://api.dzz.ai')
+    
+    if not API_KEY:
+        print("Error: SORA_API_KEY environment variable not set", file=sys.stderr)
+        print("Please set your API key: export SORA_API_KEY=your_key_here", file=sys.stderr)
+        sys.exit(1)
     
     # Initialize client
     client = SoraClient(api_key=API_KEY, base_url=BASE_URL)

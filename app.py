@@ -8,12 +8,19 @@ from flask import Flask, render_template, request, Response, jsonify
 import requests
 import json
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
 # API Configuration
 # Prefer environment variable for security in deployments
-API_KEY = os.getenv('SORA_API_KEY', "sk-wvTvyj2GXEzJkrOn73C7504a86764c279702A65237085358")
+API_KEY = os.getenv('SORA_API_KEY')
+if not API_KEY:
+    print("WARNING: SORA_API_KEY not set in environment variables!")
+    print("Please copy .env.example to .env and configure your API key.")
 BASE_URL = "https://api.dzz.ai"
 API_ENDPOINT = f"{BASE_URL}/v1/chat/completions"
 
@@ -149,6 +156,10 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Sora Video Generation Web Application")
     print("=" * 60)
+    if API_KEY:
+        print("✓ API Key configured")
+    else:
+        print("✗ API Key NOT configured - Please set SORA_API_KEY")
     print("Starting server at http://localhost:5000")
     print("Press Ctrl+C to stop")
     print("=" * 60)

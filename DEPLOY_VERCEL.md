@@ -23,13 +23,21 @@ git push
 5. 点击 "Import"
 
 ### 3. 配置环境变量
+
+**⚠️ 重要：必须配置 API Key 才能使用！**
+
 在部署配置页面：
 1. 展开 "Environment Variables"
 2. 添加环境变量：
    - **Name**: `SORA_API_KEY`
-   - **Value**: `你的API密钥`
+   - **Value**: `你的API密钥`（从 API 提供商处获取）
    - **Environment**: Production, Preview, Development（全选）
 3. 点击 "Deploy"
+
+> **安全提示**：
+> - 不要在代码中硬编码 API Key
+> - 不要将 API Key 提交到 Git
+> - 不要在截图或文档中展示真实的 API Key
 
 ### 4. 等待部署完成
 - 部署通常需要 1-3 分钟
